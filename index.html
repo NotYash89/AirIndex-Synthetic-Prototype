@@ -1,0 +1,493 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>AirIndex — Real-time Airfare Price Index</title>
+<link rel="stylesheet" href="styles.css">
+</head>
+<body>
+
+<header class="topbar">
+  <div class="brand">
+    <div class="brand-mark">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M2 12l20-8-6 20-4-8-10-4z"/></svg>
+    </div>
+    <div>
+      <div class="brand-name">AirIndex</div>
+      <div class="brand-sub">Real-time Airfare Price Index · APIx</div>
+    </div>
+  </div>
+  <nav class="topnav">
+    <button class="nav-btn active" data-view="today">Today</button>
+    <button class="nav-btn" data-view="fare">Your Fare</button>
+    <button class="nav-btn" data-view="market">Market</button>
+    <button class="nav-btn" data-view="trust">Trust</button>
+    <button class="nav-btn" data-view="method">Method</button>
+  </nav>
+  <div class="top-meta">
+    <div class="live-chip"><span class="live-dot"></span><span>LIVE</span></div>
+    <span class="src-badge" id="dataSourceBadge">Prototype · synthetic</span>
+  </div>
+</header>
+
+<main>
+
+<div class="disclosure">
+  <b>Prototype.</b> Synthetic 60-day dataset (1 Aug – 29 Sep 2026) matching the production schema (route × lead-time × source × carrier × fare-class). Production inputs: Scrapy + Playwright across IndiGo, Air India, Air India Express, Akasa, SpiceJet, MakeMyTrip, EaseMyTrip, Yatra, Cleartrip, Ixigo, Goibibo.
+</div>
+
+<!-- ==================== TODAY ==================== -->
+<section class="view active" id="view-today">
+  <div class="hero">
+    <div class="hero-grid">
+      <div class="hero-left">
+        <div class="eyebrow-light">National Airfare Price Index · APIx</div>
+        <h1 class="hero-h1">How are flight prices behaving?</h1>
+        <p class="hero-lede">A real-time index of what Indian travellers actually pay — computed from a basket of city-pairs across all booking windows.</p>
+        <div class="index-hero">
+          <div class="index-hero-top">
+            <div class="freq-toggle" id="freqToggle">
+              <button class="freq-btn active" data-freq="daily">Daily</button>
+              <button class="freq-btn" data-freq="weekly">Weekly</button>
+              <button class="freq-btn" data-freq="monthly">Monthly</button>
+            </div>
+            <span class="index-hero-base" id="heroBase">Base · Aug 2026 = 100</span>
+          </div>
+          <div class="index-hero-value" id="indexValue">—</div>
+          <div class="index-hero-change" id="indexChange">—</div>
+        </div>
+        <p class="hero-plain" id="indexPlain">—</p>
+        <div class="hero-ctas">
+          <button class="btn-glass" data-explain="index">
+            <span>Why this number?</span>
+            <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M5 12h14M13 6l6 6-6 6"/></svg>
+          </button>
+          <button class="btn-ghost-light" data-goto="method">See the Jevons calculation</button>
+        </div>
+      </div>
+      <div class="hero-right">
+        <div class="hero-chart-label">
+          <span>APIx · last 30 days</span>
+          <span class="hero-chart-legend"><i class="legend-solid"></i>daily</span>
+        </div>
+        <svg id="todayChart" class="hero-chart"></svg>
+      </div>
+    </div>
+    <div class="hero-glow"></div>
+  </div>
+
+  <div class="kpi-grid">
+    <div class="kpi">
+      <div class="kpi-icon kpi-icon-teal">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20 6L9 17l-5-5"/></svg>
+      </div>
+      <div class="kpi-body">
+        <div class="kpi-header"><div class="kpi-label">Coverage</div><button class="icon-btn-tiny" data-explain="coverage">ⓘ</button></div>
+        <div class="kpi-value"><span id="kpiCoverage">—</span></div>
+        <div class="kpi-note">fares collected / expected attempts</div>
+      </div>
+    </div>
+    <div class="kpi">
+      <div class="kpi-icon kpi-icon-rose">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M19 9V6a2 2 0 0 0-2-2H7a2 2 0 0 0-2 2v3"/><path d="M3 16a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-5a2 2 0 0 0-4 0v2H7v-2a2 2 0 0 0-4 0v5z"/><path d="M5 18v2M19 18v2"/></svg>
+      </div>
+      <div class="kpi-body">
+        <div class="kpi-header"><div class="kpi-label">Sold-out rate</div><button class="icon-btn-tiny" data-explain="soldout">ⓘ</button></div>
+        <div class="kpi-value"><span id="kpiSoldOut">—</span></div>
+        <div class="kpi-note">attempts with no fare returned</div>
+      </div>
+    </div>
+    <div class="kpi">
+      <div class="kpi-icon kpi-icon-blue">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 2v20M17 5H9.5a3.5 3.5 0 100 7h5a3.5 3.5 0 110 7H6"/></svg>
+      </div>
+      <div class="kpi-body">
+        <div class="kpi-header"><div class="kpi-label">Sources live</div><button class="icon-btn-tiny" data-explain="sources">ⓘ</button></div>
+        <div class="kpi-value"><span id="kpiSources">—</span></div>
+        <div class="kpi-note">airlines + OTAs returning fares</div>
+      </div>
+    </div>
+    <div class="kpi">
+  <div class="kpi-icon kpi-icon-amber">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+      <path d="M23 6l-9.5 9.5-5-5L1 18"/>
+      <path d="M17 6h6v6"/>
+    </svg>
+  </div>
+  <div class="kpi-body">
+    <div class="kpi-header"><div class="kpi-label">Change vs last week</div><button class="icon-btn-tiny" data-explain="momentum">ⓘ</button></div>
+    <div class="kpi-value"><span id="kpiMomentum">—</span></div>
+    <div class="kpi-note">7-day average vs the week before</div>
+  </div>
+</div>
+  </div>
+
+  <div class="section-head-row">
+    <div>
+      <div class="eyebrow">Top movers</div>
+      <h2 class="section-h2">Routes driving today's move</h2>
+    </div>
+    <div class="head-actions">
+      <button class="icon-btn" data-explain="movers">ⓘ</button>
+      <button class="link-btn" data-goto="market">See all routes →</button>
+    </div>
+  </div>
+  <div class="movers-grid" id="topMovers"></div>
+</section>
+
+<!-- ==================== YOUR FARE ==================== -->
+<section class="view" id="view-fare">
+  <div class="page-head">
+    <div class="eyebrow">Passenger intelligence</div>
+    <h1 class="page-h1">Is your fare good?</h1>
+    <p class="page-lede">Enter the fare you were quoted, pick a route and window. We'll tell you how it compares across every source we scrape.</p>
+  </div>
+
+  <div class="search-bar">
+    <div class="field"><label>From</label>
+      <select id="fromSel">
+        <option value="DEL">Delhi (DEL)</option>
+        <option value="BOM">Mumbai (BOM)</option>
+        <option value="BLR">Bengaluru (BLR)</option>
+        <option value="MAA">Chennai (MAA)</option>
+      </select>
+    </div>
+    <div class="field"><label>To</label>
+      <select id="toSel">
+        <option value="BOM">Mumbai (BOM)</option>
+        <option value="BLR">Bengaluru (BLR)</option>
+        <option value="DEL">Delhi (DEL)</option>
+        <option value="MAA">Chennai (MAA)</option>
+      </select>
+    </div>
+    <div class="field"><label>When</label>
+      <select id="leadSel">
+        <option value="T+1">Tomorrow</option>
+        <option value="T+7" selected>In 1 week</option>
+        <option value="T+15">In 2 weeks</option>
+        <option value="T+30">In 1 month</option>
+        <option value="T+45">In 1.5 months</option>
+      </select>
+    </div>
+    <div class="field"><label>Your fare (optional)</label>
+      <input type="number" id="userFareInput" placeholder="e.g. 5820" min="1000" max="50000">
+    </div>
+    <button class="btn-primary" id="searchBtn">Check fare
+      <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M5 12h14M13 6l6 6-6 6"/></svg>
+    </button>
+  </div>
+
+  <div class="verdict">
+    <div class="verdict-top">
+      <div class="verdict-left">
+        <div class="eyebrow-light">Selected</div>
+        <h2 class="verdict-route" id="fareRoute">DEL → BOM</h2>
+        <div class="verdict-sub" id="fareRouteName">Delhi → Mumbai</div>
+        <div class="verdict-lead">Departure · <b id="fareLead">in 1 week</b></div>
+        <div class="verdict-line">
+          Cheapest at <b id="fareVerdictCheapest">—</b> · <span class="verdict-price" id="fareVerdictPrice">—</span>
+          <span class="verdict-save">save up to <b id="fareSaving">—</b> by comparing</span>
+        </div>
+        <div class="verdict-line" id="userFareLine" style="display:none">
+          Your fare · <b id="userFareVerdict">—</b>
+        </div>
+      </div>
+      <div class="verdict-score-wrap">
+        <button class="icon-btn-tiny score-info" data-explain="score">ⓘ</button>
+        <svg class="score-ring" viewBox="0 0 120 120">
+          <circle class="ring-bg" cx="60" cy="60" r="52"/>
+          <circle class="ring-fill" id="scoreRing" cx="60" cy="60" r="52" stroke-dasharray="326.7" stroke-dashoffset="326.7"/>
+        </svg>
+        <div class="score-inner">
+          <span class="score-num" id="fareScore">—</span>
+          <span class="score-denom">/100</span>
+        </div>
+        <div class="verdict-tag" id="fareScoreClass">—</div>
+      </div>
+    </div>
+  </div>
+
+  <div class="card">
+    <div class="card-head">
+      <div>
+        <div class="card-title">Lead-time elasticity curve</div>
+        <div class="card-sub">Average fare by booking window. The chart shows price levels; the table below shows how much you save at each step.</div>
+      </div>
+      <button class="icon-btn" data-explain="leadElasticity">ⓘ</button>
+    </div>
+    <svg id="leadChart" class="chart-lg"></svg>
+    <div class="callout"><span class="callout-icon">↑</span><span>Booking tomorrow costs about <b id="leadPremium">—</b> more than booking a month ahead.</span></div>
+    <div class="elasticity-grid" id="elasticityGrid"></div>
+  </div>
+
+  <div class="grid-2">
+    <div class="card">
+      <div class="card-head">
+        <div><div class="card-title">Best days to fly</div><div class="card-sub">September 2026 · final payable</div></div>
+        <button class="icon-btn" data-explain="calendar">ⓘ</button>
+      </div>
+      <div class="cal-summary">
+        <div class="cal-sum-best"><span>CHEAPEST</span><strong id="calBest">—</strong><small id="calBestNote">—</small></div>
+        <div class="cal-sum-worst"><span>COSTLIEST</span><strong id="calWorst">—</strong><small id="calWorstNote">—</small></div>
+        <div class="cal-sum-save"><span>YOU CAN SAVE</span><strong id="calVerdict">—</strong><small>by picking the right day</small></div>
+      </div>
+      <div class="cal-legend">
+        <span><i class="lg low"></i>cheap <b id="calLowRange">—</b></span>
+        <span><i class="lg mid"></i>normal <b id="calMidRange">—</b></span>
+        <span><i class="lg high"></i>expensive <b id="calHighRange">—</b></span>
+      </div>
+      <div class="calendar" id="calendarGrid"></div>
+    </div>
+
+    <div class="card">
+      <div class="card-head">
+        <div><div class="card-title">Price alert</div><div class="card-sub">Get told when this route drops</div></div>
+        <button class="icon-btn" data-explain="alert">ⓘ</button>
+      </div>
+      <div class="alert-row">
+        <input type="number" id="alertTarget" value="5000" min="1000">
+        <button class="btn-primary" id="alertBtn">Set alert</button>
+      </div>
+      <div class="alert-state" id="alertState"></div>
+      <p class="plain-note">You'll be notified if the lowest final payable fare drops below the price you set.</p>
+      <div class="divider"></div>
+      <div class="tip-block">
+        <div class="tip-icon">💡</div>
+        <div><b>Quick tip</b><p>Two weeks out (T+15) is usually the sweet spot on this route. Beyond T+30 the price barely moves.</p></div>
+      </div>
+    </div>
+  </div>
+
+  <div class="card">
+    <div class="card-head">
+      <div>
+        <div class="card-title">Fare across sources</div>
+        <div class="card-sub">The same flight, priced by every source we scrape — final payable, not just the starting price</div>
+      </div>
+      <button class="icon-btn" data-explain="fareacross">ⓘ</button>
+    </div>
+    <div class="fare-table-wrap" id="fareTable"></div>
+  </div>
+</section>
+
+<!-- ==================== MARKET ==================== -->
+<section class="view" id="view-market">
+  <div class="page-head">
+    <div class="eyebrow">Route intelligence</div>
+    <h1 class="page-h1">Where is the pressure?</h1>
+    <p class="page-lede">Every route in the basket — its weight, how much its fares moved, and how well the data held up.</p>
+  </div>
+
+  <div class="card">
+    <div class="card-head">
+      <div><div class="card-title">Representative route basket</div><div class="card-sub">Weights are DGCA passenger shares <b>within this basket</b> — they sum to 100% across the six routes shown</div></div>
+      <button class="icon-btn" data-explain="weights">ⓘ</button>
+    </div>
+    <div class="route-table-wrap" id="routeTable"></div>
+  </div>
+
+  <div class="card">
+    <div class="card-head">
+      <div><div class="card-title">Route × lead-time heatmap</div><div class="card-sub">Each cell shows the fare relative to the base month. Cooler = cheaper, warmer = more expensive</div></div>
+      <button class="icon-btn" data-explain="leadHeat">ⓘ</button>
+    </div>
+    <div class="lead-heatmap-wrap" id="leadHeatmap"></div>
+  </div>
+</section>
+
+<!-- ==================== TRUST ==================== -->
+<section class="view" id="view-trust">
+  <div class="hero hero-trust">
+    <div class="hero-grid">
+      <div class="hero-left">
+        <div class="eyebrow-light">Evidence &amp; data quality</div>
+        <h1 class="hero-h1">Can I trust today's number?</h1>
+        <p class="hero-lede">Every number on this page is built from fares we can point to. Here's what today's index is made from.</p>
+        <div class="trust-stats">
+          <div><span>COVERAGE</span><strong id="trustCoverage2">—</strong></div>
+          <div><span>SOURCES</span><strong id="trustSources2">—</strong></div>
+          <div><span>RE-CHECKED</span><strong id="trustFlagged2">—</strong></div>
+          <div><span>OBSERVATIONS</span><strong id="trustObs">—</strong></div>
+        </div>
+      </div>
+      <div class="trust-panel">
+        <div class="trust-panel-label">Today's APIx</div>
+        <div class="trust-panel-value" id="trustIndex">—</div>
+        <div class="trust-panel-row"><span>Method</span><b id="trustMethod">—</b></div>
+        <div class="trust-panel-row"><span>Snapshot</span><b id="trustSnapshot">—</b></div>
+        <button class="btn-glass btn-full" data-goto="method">
+          <span>See the Jevons calculation</span>
+          <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M5 12h14M13 6l6 6-6 6"/></svg>
+        </button>
+      </div>
+    </div>
+    <div class="hero-glow"></div>
+  </div>
+
+  <div class="card">
+    <div class="card-head">
+      <div><div class="card-title">Today's data journey</div><div class="card-sub">From raw scraped quotes to an index-ready dataset</div></div>
+      <button class="icon-btn" data-explain="pipeline">ⓘ</button>
+    </div>
+    <div class="pipeline">
+      <div class="pipe-step pipe-blue"><div class="pipe-tag">01 · EXPECTED</div><div class="pipe-num" id="pipeExpected">—</div><div class="pipe-note">scraper attempts scheduled</div></div>
+      <div class="pipe-arrow">→</div>
+      <div class="pipe-step pipe-teal"><div class="pipe-tag">02 · COLLECTED</div><div class="pipe-num" id="pipeCollected">—</div><div class="pipe-note">raw quotes received</div></div>
+      <div class="pipe-arrow">→</div>
+      <div class="pipe-step pipe-green"><div class="pipe-tag">03 · VALIDATED</div><div class="pipe-num" id="pipeValidated">—</div><div class="pipe-note">passed cleaning checks</div></div>
+      <div class="pipe-arrow">→</div>
+      <div class="pipe-step pipe-amber"><div class="pipe-tag">04 · REVIEWED</div><div class="pipe-num" id="pipeReviewed">—</div><div class="pipe-note">outliers set aside</div></div>
+      <div class="pipe-arrow">→</div>
+      <div class="pipe-step pipe-purple"><div class="pipe-tag">05 · INDEX READY</div><div class="pipe-num" id="pipeReady">—</div><div class="pipe-note">feeding today's APIx</div></div>
+    </div>
+  </div>
+
+  <div class="grid-2">
+    <div class="card">
+      <div class="card-head">
+        <div><div class="card-title">Source health</div><div class="card-sub">How well each scraped source agrees with the others</div></div>
+        <button class="icon-btn" data-explain="sourcehealth">ⓘ</button>
+      </div>
+      <div class="source-health" id="sourceHealth"></div>
+    </div>
+    <div class="card">
+      <div class="card-head">
+        <div><div class="card-title">Trace a fare</div><div class="card-sub">Second-look rows surface first. Click any observation to see how it feeds the index</div></div>
+        <button class="icon-btn" data-explain="trace">ⓘ</button>
+      </div>
+      <div class="trace-wrap" id="traceTable"></div>
+    </div>
+  </div>
+
+  <div class="card mospi-context">
+    <div class="card-head">
+      <div><div class="card-title">Why this matters · what APIx augments</div><div class="card-sub">The government publishes a monthly CPI value for airfare. APIx makes it daily, route-level and lead-time-segmented.</div></div>
+      <button class="icon-btn" data-explain="mospi">ⓘ</button>
+    </div>
+    <div class="source-flow">
+      <div class="src-node"><div class="src-node-icon">🏛️</div><b>MoSPI monthly CPI</b><small>Airfare item · ~1 month lag</small></div>
+      <div class="src-arrow">+</div>
+      <div class="src-node accent"><div class="src-node-icon">📈</div><b>APIx daily index</b><small>Routes × lead-times × sources</small></div>
+      <div class="src-arrow">→</div>
+      <div class="src-node"><div class="src-node-icon">📊</div><b>Fresher CPI signal</b><small>for MoSPI / RBI / NSO</small></div>
+    </div>
+  </div>
+
+  <div class="card">
+    <div class="card-head">
+      <div><div class="card-title">Compliance &amp; ethical scraping</div><div class="card-sub">How the production scraper stays on the right side of site terms</div></div>
+      <button class="icon-btn" data-explain="compliance">ⓘ</button>
+    </div>
+    <div class="compliance-grid">
+      <div class="compliance-item"><b>robots.txt respected</b><p>Each source's rules parsed before any crawl. Paths marked disallowed are skipped.</p></div>
+      <div class="compliance-item"><b>Rate limits</b><p>Requests throttled well below the source's published limit. Bursts are queued, never dropped on the server.</p></div>
+      <div class="compliance-item"><b>No login bypass</b><p>Only publicly visible fares are read. No CAPTCHA solving, no session hijacking, no user accounts.</p></div>
+      <div class="compliance-item"><b>Terms-of-service review</b><p>Each source's ToS reviewed before onboarding. Sources that prohibit automated access are excluded.</p></div>
+      <div class="compliance-item"><b>Attribution</b><p>Every observation carries a source tag and timestamp. Data is not republished as the source's own.</p></div>
+      <div class="compliance-item"><b>Audit trail</b><p>Raw quotes preserved with a versioned parser trail. Any published number traces back to the exact request.</p></div>
+    </div>
+  </div>
+</section>
+
+<!-- ==================== METHOD ==================== -->
+<section class="view" id="view-method">
+  <div class="page-head">
+    <div class="eyebrow">Methodology · step by step</div>
+    <h1 class="page-h1">How APIx is calculated.</h1>
+    <p class="page-lede">Every route, every window, every source — combined by the Jevons index with DGCA passenger weights.</p>
+  </div>
+
+  <div class="card">
+    <div class="card-head">
+      <div><div class="card-title">Live calculation</div><div class="card-sub">Change the weight mode and watch the index recompute from the same 60-day dataset</div></div>
+      <div class="calc-controls">
+        <select id="weightMode">
+          <option value="dgca">DGCA passenger weights</option>
+          <option value="equal">Equal route weights</option>
+          <option value="expenditure">Passenger × Fare weights</option>
+        </select>
+        <button class="btn-primary" id="recomputeBtn">
+          <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M21 12a9 9 0 11-3-6.7M21 3v6h-6"/></svg>
+          Recompute
+        </button>
+      </div>
+    </div>
+    <div class="calc-steps" id="calcSteps"></div>
+    <div class="recompute-meta">
+      <span class="recompute-dot"></span>
+      <span>Last computed: <b id="lastComputed">—</b></span>
+    </div>
+    <div class="recompute-result" id="recomputeResult"></div>
+  </div>
+
+  <div class="card">
+    <div class="card-head">
+      <div><div class="card-title">60-day APIx series · illustrative</div><div class="card-sub">Grey line = daily APIx (weekly cycle expected). Teal dashed = 7-day rolling average. Vertical markers = major travel events (Independence Day, Onam, Ganesh Chaturthi). Real DGCA backtest is a production build item.</div></div>
+      <button class="icon-btn" data-explain="backtest">ⓘ</button>
+    </div>
+    <div class="backtest-stats">
+      <div><strong id="btDays">—</strong><span>days in series</span></div>
+      <div><strong id="btLatest">—</strong><span>latest value</span></div>
+      <div><strong id="btWeekly">—</strong><span>7-day average</span></div>
+      <div><strong id="btMonthly">—</strong><span>30-day average</span></div>
+    </div>
+    <svg id="backtestChart" class="chart-lg"></svg>
+    <div class="event-legend" id="eventLegend"></div>
+  </div>
+
+  <div class="card">
+    <div class="card-head">
+      <div><div class="card-title">API for NSO / RBI integration</div><div class="card-sub">Click any endpoint for a live sample response</div></div>
+      <div class="head-actions">
+        <button class="btn-ghost small" id="exportCsvBtn">⇩ CSV</button>
+        <button class="btn-ghost small" id="exportJsonBtn">⇩ JSON</button>
+        <button class="icon-btn" data-explain="api">ⓘ</button>
+      </div>
+    </div>
+    <div class="endpoints" id="endpoints"></div>
+  </div>
+
+ <div class="docs-grid" style="margin-top: 16px;">
+  <div class="doc-card">
+    <div class="doc-icon">📖</div>
+    <h3>Documentation</h3>
+    <p>The methodology on this page is the whitepaper. The API reference, data dictionary, compliance note and deployment guide are production build items.</p>
+    <ul class="doc-list">
+      <li class="done">Methodology — Jevons formula, weights, outlier rules (this page)</li>
+      <li>API reference — endpoints, auth, rate limits, response schemas</li>
+      <li>Data dictionary — every observation field explained</li>
+      <li>Compliance note — robots.txt, ToS, rate-limiting safeguards</li>
+      <li>Deployment guide — scraper hosts, DB, refresh schedule</li>
+    </ul>
+  </div>
+  <div class="doc-card">
+    <div class="doc-icon">🧪</div>
+    <h3>Automated testing</h3>
+    <p>Not built in this prototype. Listed here as production scope, not as done.</p>
+    <ul class="doc-list">
+      <li>Jevons engine unit tests — geometric mean, weights, matched-item ratios</li>
+      <li>Outlier rule tests — the 8% same-lead deviation band</li>
+      <li>Scraper parser fixtures — one per source</li>
+      <li>End-to-end pipeline smoke test — daily scrape → clean → index</li>
+      <li>Regression suite — index stability across a 30-day window</li>
+    </ul>
+  </div>
+</div>
+</section>
+
+</main>
+
+<aside class="explainer" id="explainer">
+  <button class="explainer-close" id="explainerClose" aria-label="Close">×</button>
+  <div class="explainer-eyebrow">AIRINDEX EXPLAINS</div>
+  <h3 id="explainerTitle">—</h3>
+  <p id="explainerBody" class="explainer-body">—</p>
+  <details class="explainer-tech"><summary>Technical detail</summary><p id="explainerTech">—</p></details>
+</aside>
+
+<footer class="footer">AirIndex · APIx · Real-time Airfare Price Index · SIH 2026 PS 26056</footer>
+
+<script src="app.js"></script>
+</body>
+</html>
